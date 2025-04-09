@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Library Inventory</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f2f2f2;
+      padding: 20px;
+    }
+
+    h1 {
+      color: #333;
+    }
+
+    input {
+      padding: 8px;
+      margin: 5px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    button {
+      padding: 8px 12px;
+      background-color: #007BFF;
+      border: none;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background-color: white;
+    }
+
+    th, td {
+      padding: 10px;
+      border: 1px solid #ddd;
+    }
+
+    th {
+      background-color: #007BFF;
+      color: white;
+    }
+
+    td button {
+      background-color: #dc3545;
+    }
+
+    td button:hover {
+      background-color: #a71d2a;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Library Book Manager</h1>
+
+  <input type="text" id="title" placeholder="Book Title">
+  <input type="text" id="author" placeholder="Author">
+  <input type="text" id="genre" placeholder="Genre">
+  <button onclick="addBook()">Add Book</button>
+
+  <h2>Books List</h2>
+  <table id="booksTable">
+    <thead>
+      <tr><th>ID</th><th>Title</th><th>Author</th><th>Genre</th><th>Action</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    const API_URL = "http://localhost:8080/api/books";
+
+    function getBooks() {
+      fetch(API_URL)
+        .then(res => res.json())
+        .then(data => {
+          const tableBody = document.querySelector("#booksTable tbody");
+          tableBody.innerHTML = "";
+          data.forEach(book => {
+            tableBody.innerHTML += `
+              <tr>
+                <td>${book.id}</td>
+                <td>${book.title}</td>
+                <td>${book.author}</td>
+                <td>${book.genre}</td>
+                <td><button onclick="deleteBook(${book.id})">Delete</button></td>
+              </tr>`;
+          });
+        })
+        .catch(err => console.error("Error fetching books:", err));
+    }
+
+    function addBook() {
+      const title = document.getElementById("title").value.trim();
+      const author = document.getElementById("author").value.trim();
+      const genre = document.getElementById("genre").value.trim();
+
+      if (!title || !author || !genre) {
+        alert("All fields are required.");
+        return;
+      }
+
+      fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, author, genre })
+      })
+      .then(res => {
+        if (!res.ok) throw new Error("Failed to add book");
+        return res.json();
+      })
+      .then(() => {
+        getBooks();
+        document.getElementById("title").value = "";
+        document.getElementById("author").value = "";
+        document.getElementById("genre").value = "";
+      })
+      .catch(err => {
+        console.error("Error adding book:", err);
+        alert("Error adding book. See console.");
+      });
+    }
+
+    function deleteBook(id) {
+      fetch(`${API_URL}/${id}`, {
+        method: "DELETE"
+      })
+      .then(() => getBooks())
+      .catch(err => console.error("Delete error:", err));
+    }
+
+    getBooks();
+  </script>
+
+</body>
+</html>
